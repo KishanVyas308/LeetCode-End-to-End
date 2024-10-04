@@ -8,5 +8,13 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": ""
+  "description": "",
+  "dependencies": {
+    "@types/express": "^5.0.0",
+    "@types/redis": "^4.0.11",
+    "@types/ws": "^8.5.12",
+    "express": "^4.21.0",
+    "redis": "^4.7.0",
+    "ws": "^8.18.0"
+  }
 }
