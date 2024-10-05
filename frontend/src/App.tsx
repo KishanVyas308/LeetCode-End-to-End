@@ -12,13 +12,14 @@ const App: React.FC = () => {
   const [code, setCode] = useState<any>("// Write your code here...");
   const [language, setLanguage] = useState("javascript");
   const [output, setOutput] = useState<string[]>([]); // Output logs
-  const wsRef = useRef<WebSocket | null>(null); // WebSocket connection reference
+  const [socket, setSocket] = useState<WebSocket | null>(null);
   const [isLoading, setIsLoading] = useState(false); // Loading state
 
   useEffect(() => {
-    if (!wsRef.current) {
-      const ws = new WebSocket(`ws://localhost:3000`);
-      wsRef.current = ws;
+    if (!socket) {
+      const ws = new WebSocket(`ws://localhost:3000`); // Connect to WebSocket server
+      
+      setSocket(ws);
   
       ws.onopen = () => {
         console.log("Connected to WebSocket");
@@ -106,7 +107,6 @@ const App: React.FC = () => {
       </div>
     </div>
   );
-  
 };
 
 export default App;

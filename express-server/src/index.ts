@@ -1,13 +1,15 @@
 import express from "express";
 import { createClient } from "redis";
 import { WebSocketServer } from "ws";
+import cors from 'cors';
 
 const app = express();
 app.use(express.json());
+app.use(cors());
 
 const redisClient = createClient();
 const pubSubClient = createClient(); // Redis client for Pub/Sub
-const userConnections : any = {}; // Store user WebSocket connections
+const userConnections: any = {}; // Store user WebSocket connections
 
 redisClient.on("error", (err) => console.log("Redis Client Error", err));
 pubSubClient.on("error", (err) => console.log("Redis PubSub Client Error", err));
@@ -15,31 +17,35 @@ pubSubClient.on("error", (err) => console.log("Redis PubSub Client Error", err))
 const wss = new WebSocketServer({ noServer: true });
 
 wss.on('connection', (ws, req) => {
-  const userId : any = req.headers['sec-websocket-key']; // Some identifier for the user (can be userId)
+  const userId : any = req.headers['sec-websocket-key']; // Using sec-websocket-key as a temporary user identifier
   userConnections[userId] = ws;
-
+  console.log(`New user connected: ${userId}`);
+  
   ws.on('close', () => {
     delete userConnections[userId]; // Cleanup on disconnect
   });
 });
 
 app.post("/submit", async (req, res) => {
-  const { problemId, code, language, userId } = req.body;
+  const { code, language, userId } = req.body;
   const submissionId = `submission-${Date.now()}-${userId}`;
 
+  console.log(`Received submission from user ${userId}`);
+  
   try {
     // Push submission to Redis
-    await redisClient.lPush("problems", JSON.stringify({ problemId, code, language, userId, submissionId }));
+    await redisClient.lPush("problems", JSON.stringify({ code, language, userId, submissionId }));
+    
+    console.log(`Submission pushed to Redis: ${submissionId}`);
     
     // Subscribe to the channel for this specific submission
     pubSubClient.subscribe(submissionId, (message) => {
         console.log(`Received message: ${message}`);
-        // Process the message or do whatever you need here
-      });
+    });
 
     pubSubClient.on('message', (channel, message) => {
       if (channel === submissionId) {
-        const ws : any = userConnections[userId];
+        const ws = userConnections[userId];
         if (ws) {
           ws.send(message); // Send the result back to the user's WebSocket
         }
