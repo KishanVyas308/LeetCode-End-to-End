@@ -2,7 +2,7 @@
 
 for now Backend is working properly, some issue with web socket connection
 
-<img src="system-architecture.png" width="500">
+<img src="https://raw.githubusercontent.com/KishanVyas308/JS-Compiler/refs/heads/main/system-design.png" width="500">
 
 ## express-server
 
