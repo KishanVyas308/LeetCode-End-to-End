@@ -1,6 +1,6 @@
 # simple-compiler
 
-for now Backend is working properly, but some issue with web socket connection
+for now Backend is working properly, some issue with web socket connection
 
 <img src="system-architecture.png" width="500">
 
