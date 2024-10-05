@@ -4,6 +4,7 @@
 
 set up and run
 ```bash
+cd ./express-server
 npm install
 tsc -b
 node ./dist/index.js
@@ -13,7 +14,6 @@ node ./dist/index.js
 
 set up and run
 ```bash
-npm install
 tsc -b
 node ./dist/index.js
 ```
