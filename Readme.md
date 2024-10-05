@@ -2,6 +2,8 @@
 
 for now Backend is working properly, but some issue with web socket connection
 
+<img src="system-architecture.png" width="500">
+
 ## express-server
 
 set up and run
