@@ -1,8 +1,10 @@
 # simple-compiler
 
-for now Backend is working properly, some issue with web socket connection
+Simple code runner is done, now time to add database
 
 <img src="https://raw.githubusercontent.com/KishanVyas308/JS-Compiler/refs/heads/main/system-design.png" width="500">
+
+Yah this, what you see is done. 
 
 ## express-server
 
