@@ -1,12 +1,19 @@
 import express from "express";
 import { createClient } from "redis";
 import cors from "cors";
+import {PrismaClient} from "@prisma/client"
+import authRoute from "./routes/authRoute"
 
 const app = express();
 app.use(express.json());
 app.use(cors());
 
 const redisClient = createClient();
+export const prisma = new PrismaClient();
+
+
+app.use("/api/v1/auth", authRoute);
+
 
 redisClient.on("error", (err) => console.log("Redis Client Error", err));
 
