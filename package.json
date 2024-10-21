@@ -1,0 +1,20 @@
+{
+  "name": "leetcode-end-to-end",
+  "version": "1.0.0",
+  "description": "Simple code runner is done, now time to add database",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "ex": "cd express-server && tsc -b && node dist/index.js",
+    "worker": "cd worker && tsc -b && node dist/index.js",
+    "ws": "cd websocket-server && tsc -b && node dist/index.js",
+    "ui": "cd frontend && npm run dev",
+    "all": "concurrently --names \"express-server,worker,websocket-server,frontend\" --prefix \"[{name}]\" \"npm run ex\" \"npm run worker\" \"npm run ws\" \"npm run ui\""
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "concurrently": "^9.0.1"
+  }
+}
