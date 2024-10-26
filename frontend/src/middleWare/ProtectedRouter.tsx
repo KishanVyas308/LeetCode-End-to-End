@@ -6,6 +6,8 @@ import { Navigate, useNavigate } from "react-router-dom";
 const ProtectedRouter = ({ children }: any) => {
   const user = useRecoilValue(userAtom);
 
+
+
   return (
     user.id != "" ? children : <Navigate to="/register" />
   )
