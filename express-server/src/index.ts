@@ -11,7 +11,7 @@ const redisClient = createClient();
 redisClient.on("error", (err) => console.log("Redis Client Error", err));
 
 app.post("/submit", async (req, res) => {
-  const { code, language, userId } = req.body;
+  const { code, language, userId, input } = req.body;
   const submissionId = `submission-${Date.now()}-${userId}`;
 
   console.log(`Received submission from user ${userId}`);
@@ -20,7 +20,7 @@ app.post("/submit", async (req, res) => {
     // Push submission to Redis
     await redisClient.lPush(
       "problems",
-      JSON.stringify({ code, language, userId, submissionId })
+      JSON.stringify({ code, language, userId, submissionId, input })
     );
 
     console.log(
