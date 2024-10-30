@@ -14,6 +14,12 @@ const CodeEditor: React.FC = () => {
   const [input, setInput] = useState<string>(""); // Input for code
   const user = useRecoilValue(userAtom);
 
+  // multipleyer state
+  const [users, setUsers] = useState([]);
+  const [invitationCode, setInvitationCode] = useState("");
+
+
+  // WebSocket connection logic
   useEffect(() => {
     if (!socket) {
       const ws = new WebSocket(`ws://localhost:5000`, user.id); // Connect to WebSocket server
@@ -64,7 +70,6 @@ const CodeEditor: React.FC = () => {
 
     setCurrentButtonState("Compiling...");
 
-
     if (!res.ok) {
       setOutput((prevOutput) => [
         ...prevOutput,
@@ -76,85 +81,127 @@ const CodeEditor: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white p-4">
-      <div className="max-w-6xl mx-auto space-y-6">
-        <h1 className="text-3xl font-bold text-blue-400 mb-6 text-center">Code Playground</h1>
-
-        {/* Language Selector */}
-        <div className="flex justify-end mb-4">
-          <select
-            value={language}
-            onChange={(e) => setLanguage(e.target.value)}
-            className="bg-gray-800 text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-lg transition duration-300"
-          >
-            <option value="javascript">JavaScript</option>
-            <option value="python">Python</option>
-            <option value="cpp">C++</option>
-            <option value="java">Java</option>
-            <option value="rust">Rust</option>
-            <option value="go">Go</option>
-          </select>
-        </div>
-
-        {/* Code Editor */}
-        <div className="border border-gray-700 rounded-lg overflow-hidden shadow-lg">
-          <CodeiumEditor
-            value={code}
-            language={language}
-            theme="vs-dark"
-            onChange={setCode}
-          />
-        </div>
-
-        {/* Input Section */}
-        <div className="mt-4">
-          <h2 className="text-xl font-bold text-gray-400">Input:</h2>
-          <textarea
-            value={input}
-            style={{ height: "120px" }}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder={`Enter input for your code like... \n5 \n10`}
-            className="bg-gray-800  text-white w-full p-4 rounded-lg shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 mt-2"
-          />
-        </div>
+    <div className="min-h-screen  bg-gray-900 text-white px-4 pt-4">
+      <div className=" mx-auto">
 
 
+        <div className="flex space-x-4">
+          {/* Left Side: Code Editor */}
+          <div className="w-3/4">
+            <div className="flex justify-between mb-4 px-3">
+              <label className="text-white text-3xl">Code Together</label>
+              <div className="flex gap-3">
 
-        {/* Submit Button */}
-        <div className="flex justify-center">
-          <button
-            onClick={handleSubmit}
-            className={`bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-6 py-3 mt-4 rounded-lg shadow-lg transition-transform duration-300 transform ${isLoading ? 'opacity-50 cursor-not-allowed' : 'hover:scale-105'}`}
-            disabled={isLoading}
-          >
+                {/* Submit Button */}
+                <div className="flex justify-center ">
+                  <button
+                    onClick={handleSubmit}
+                    className={`bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-4 py-2 rounded-lg shadow-lg transition-transform duration-300 transform ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    disabled={isLoading}
+                  >
+                    <span className="flex items-center space-x-2">
+                      {isLoading && <AiOutlineLoading3Quarters className="animate-spin" />}
+                      <span>{currentButtonState}</span>
+                    </span>
+                  </button>
+                </div>
+                {/* Language Selector */}
+                <select
+                  value={language}
+                  onChange={(e) => setLanguage(e.target.value)}
+                  className="bg-gray-800 h-10 text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-lg transition duration-300"
+                >
+                  <option value="javascript">JavaScript</option>
+                  <option value="python">Python</option>
+                  <option value="cpp">C++</option>
+                  <option value="java">Java</option>
+                  <option value="rust">Rust</option>
+                  <option value="go">Go</option>
+                </select>
+              </div>
+            </div>
 
-            <span className="flex items-center space-x-2">
-              {isLoading && <AiOutlineLoading3Quarters className="animate-spin" />
-              }
-              <span>{currentButtonState}</span>
-            </span>
-          </button>
-        </div>
-
-        {/* Output Section */}
-        <h2 className="text-xl font-bold text-gray-400 mt-8">Output:</h2>
-        <div className="bg-gray-800 text-green-400 p-4 rounded-lg mt-2 h-64 overflow-y-auto shadow-lg space-y-2">
-          <div className="flex justify-between items-center">
-            <h2 className="text-xl font-bold text-gray-400">Code:</h2>
-            <button
-              onClick={() => setOutput([])}
-              className="text-red-500 hover:text-red-600"
-            >
-              Clear Outpot
-            </button>
+            {/* Code Editor */}
+            <div className="border border-gray-700 rounded-tl-lg rounded-bl-lg overflow-hidden shadow-lg ">
+              <CodeiumEditor
+                value={code}
+                language={language}
+                theme="vs-dark"
+                onChange={setCode}
+                height={"90vh"}
+              />
+            </div>
           </div>
-          {output.length > 0 ? (
-            output.map((line, index) => (
-              <pre key={index} className="whitespace-pre-wrap">{line}</pre>
-            ))
-          ) : (
-            <p className="text-gray-500">No output yet. Submit your code to see results.</p>
-          )}
+
+          {/* Right Side: Input and Output */}
+          <div className="w-1/4 flex flex-col space-y-4">
+
+            {/* user connected and invition code */}
+            <div className="flex justify-between ">
+              {/* User Connected */}
+              <div>
+                <h2 className="text-xl font-bold text-gray-400">Users:</h2>
+                <div className="bg-gray-800 text-green-400 p-4  rounded-lg mt-2 overflow-y-auto shadow-lg ">
+                  {users.length > 0 ? (
+                    users.map((user, index) => (
+                      <pre key={index} className="whitespace-pre-wrap">{user}</pre>
+                    ))
+                  ) : (
+                    <p className="text-gray-500">No user connected yet.</p>
+                  )}
+                </div>
+              </div>
+              {/* Invitation Code */}
+              <div>
+                <h2 className="text-xl font-bold text-gray-400">Invitation Code:</h2>
+                <div className="bg-gray-800 text-green-400 p-4 rounded-lg mt-2  overflow-y-auto shadow-lg ">
+                  {invitationCode.length > 0 ? (
+                    <pre className="whitespace-pre-wrap">{invitationCode}</pre>
+                  ) : (
+                    <p className="text-gray-500">No invitation code yet.</p>
+                  )}
+                </div>
+              </div>
+            </div>
+            {/* Input Section */}
+            <div>
+              <h2 className="text-xl font-bold text-gray-400">Input:</h2>
+              <textarea
+                value={input}
+                style={{ height: "120px" }}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder={`Enter input for your code like... \n5 \n10`}
+                className="bg-gray-800 text-white w-full p-4 rounded-lg shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 mt-2"
+              />
+            </div>
+
+
+
+            {/* Output Section */}
+            <div className="flex-1">
+
+
+              <div className="flex justify-between px-2">
+                <h2 className="text-xl font-bold text-gray-400">Output:</h2>
+                <button
+                  onClick={() => setOutput([])}
+                  className="text-red-500 hover:text-red-600"
+                >
+                  Clear
+                </button>
+              </div>
+
+              <div className="bg-gray-800 text-green-400 p-4 max-h-[60vh] rounded-lg mt-2 h-full overflow-y-auto shadow-lg space-y-2 ">
+                {output.length > 0 ? (
+                  output.map((line, index) => (
+                    <pre key={index} className="whitespace-pre-wrap">{line}</pre>
+                  ))
+                ) : (
+                  <p className="text-gray-500">No output yet. Submit your code to see results.</p>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
