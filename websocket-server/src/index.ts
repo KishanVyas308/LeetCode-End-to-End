@@ -29,20 +29,25 @@ async function process() {
     console.log(`New user connected: ${userId}`);
     let roomId = req.url?.split("?roomId=")[1]; // Get roomId from query param if provided
 
+   
     // If no roomId, generate a new roomId and add the user as the first member
-    if (!roomId || !rooms[roomId]) {
+    if (roomId == null || roomId == "" || !rooms[roomId]) {
       roomId = generateRoomId();
       rooms[roomId] = [];
       ws.send(
         JSON.stringify({
+          isNewRoom: true,
           type: "roomId",
           roomId,
           message: `Created new room with ID: ${roomId}`,
         })
       );
+      console.log(`Created new room with ID: ${roomId}`);
     } else {
+      console.log(`Joining room with ID: ${roomId}`);
       ws.send(
         JSON.stringify({
+          isNewRoom: false,
           type: "roomId",
           roomId,
           message: `Joined room with ID: ${roomId}`,
@@ -51,6 +56,8 @@ async function process() {
     }
 
     rooms[roomId].push({ userId, ws });
+    console.log("all room", rooms);
+    
     pubSubClient.subscribe(roomId, (message) => {
       // Broadcast message to all users in the room
       rooms[roomId].forEach((user: any) => {
@@ -71,6 +78,9 @@ async function process() {
       if (rooms[roomId].length === 0) {
         delete rooms[roomId];
       }
+
+      console.log("all room", rooms);
+      
     });
   });
 
