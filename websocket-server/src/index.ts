@@ -6,32 +6,73 @@ const server = http.createServer();
 const wss = new WebSocketServer({ server });
 const pubSubClient = createClient();
 
+// Storage for rooms and their users
+const rooms: any = {};
+
+// Helper to generate a unique 6-digit room ID
+function generateRoomId() {
+  let id;
+  do {
+    id = Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit random number
+  } while (rooms[id]);
+  return id;
+}
+
 async function process() {
   pubSubClient.on("error", (err) =>
     console.log("Redis PubSub Client Error", err)
   );
 
-  const connectedUsers: any = {};
-
   wss.on("connection", (ws, req) => {
     console.log("Connection established");
     const userId: any = req.headers["sec-websocket-protocol"];
     console.log(`New user connected: ${userId}`);
+    let roomId = req.url?.split("?roomId=")[1]; // Get roomId from query param if provided
 
-    connectedUsers[userId] = ws;
-    pubSubClient.subscribe(userId, (message) => {
-      console.log(`Received message: ${message}`);
-      ws.send(message);
+    // If no roomId, generate a new roomId and add the user as the first member
+    if (!roomId || !rooms[roomId]) {
+      roomId = generateRoomId();
+      rooms[roomId] = [];
+      ws.send(
+        JSON.stringify({
+          type: "roomId",
+          roomId,
+          message: `Created new room with ID: ${roomId}`,
+        })
+      );
+    } else {
+      ws.send(
+        JSON.stringify({
+          type: "roomId",
+          roomId,
+          message: `Joined room with ID: ${roomId}`,
+        })
+      );
+    }
+
+    rooms[roomId].push({ userId, ws });
+    pubSubClient.subscribe(roomId, (message) => {
+      // Broadcast message to all users in the room
+      rooms[roomId].forEach((user: any) => {
+        user.ws.send({ type: "output", message });
+        console.log("Output sent to user id", user.userId);
+      });
     });
 
     ws.on("close", () => {
-      console.log("connection closed user id", userId);
-      delete connectedUsers[userId];
-      pubSubClient.unsubscribe(userId);
+      // console.log("connection closed user id", userId);
+      // delete connectedUsers[userId];
+      // pubSubClient.unsubscribe(userId);
+      // close conenction and if room is empty delete the room
+      // remove user from room
+      rooms[roomId] = rooms[roomId].filter(
+        (user: any) => user.userId !== userId
+      );
+      if (rooms[roomId].length === 0) {
+        delete rooms[roomId];
+      }
     });
   });
-
-
 
   wss.on("listening", () => {
     const addr: any = server.address();
