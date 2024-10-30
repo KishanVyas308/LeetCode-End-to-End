@@ -1,15 +1,14 @@
-import React, { useEffect } from "react";
 import { useRecoilValue } from "recoil";
 import { userAtom } from "../atoms/userAtom";
-import { Navigate, useNavigate } from "react-router-dom";
+import { Navigate, useParams } from "react-router-dom";
 
 const ProtectedRouter = ({ children }: any) => {
   const user = useRecoilValue(userAtom);
-
-
+  const parms = useParams();
+console.log(user);
 
   return (
-    user.id != "" ? children : <Navigate to="/register" />
+    user.id != "" && user.roomId != "" ? children : <Navigate to={`/${parms.roomId}`} />
   )
 };
 

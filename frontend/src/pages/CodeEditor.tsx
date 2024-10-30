@@ -1,50 +1,58 @@
 import React, { useState, useEffect } from "react";
 import { CodeiumEditor } from "@codeium/react-code-editor";
 import { userAtom } from "../atoms/userAtom";
-import { useRecoilValue } from "recoil";
+import { useRecoilState } from "recoil";
 import { AiOutlineLoading3Quarters } from "react-icons/ai"; // Import spinner icon
+import { socketAtom } from "../atoms/socketAtom";
+import { useNavigate, useParams } from "react-router-dom";
 
 const CodeEditor: React.FC = () => {
   const [code, setCode] = useState<any>("// Write your code here...");
   const [language, setLanguage] = useState("javascript");
   const [output, setOutput] = useState<string[]>([]); // Output logs
-  const [socket, setSocket] = useState<WebSocket | null>(null);
+  const [socket, setSocket] = useRecoilState<WebSocket | null>(socketAtom);
   const [isLoading, setIsLoading] = useState(false); // Loading state
   const [currentButtonState, setCurrentButtonState] = useState("Submit Code");
   const [input, setInput] = useState<string>(""); // Input for code
-  const user = useRecoilValue(userAtom);
+  const [user, setUser] = useRecoilState(userAtom);
+  const navigate = useNavigate();
+
 
   // multipleyer state
   const [users, setUsers] = useState([]);
-  const [invitationCode, setInvitationCode] = useState("");
-
+  const parms = useParams();
 
   // WebSocket connection logic
   useEffect(() => {
+
     if (!socket) {
-      const ws = new WebSocket(`ws://localhost:5000`, user.id); // Connect to WebSocket server
-
-      setSocket(ws);
-
-      ws.onopen = () => {
-        console.log("Connected to WebSocket");
-      };
-
-      ws.onmessage = (event) => {
-        const data = event.data;
-        setOutput((prevOutput) => [...prevOutput, data]); // Append real-time output
-        setIsLoading(false);
-        setCurrentButtonState("Submit Code");
-      };
-
-      ws.onclose = () => {
-        console.log("WebSocket connection closed");
-      };
-
-      return () => {
-        ws.close(); // Cleanup WebSocket connection on unmount
-      };
+      navigate("/" + parms.roomId);
     }
+    else {
+    
+      socket.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        if (data.type === "users") {
+          setUsers(data.users);
+        }
+
+        if (data.type === "output") {
+          setOutput((prevOutput) => [...prevOutput, data.output]);
+        }
+      };
+      socket.onclose = () => {
+        console.log("Connection closed");
+        setUser({
+          id: "",
+          name: "",
+          roomId: "",
+        })
+        setSocket(null);
+      }
+    }
+    return () => {
+      socket?.close();
+    };
   }, []);
 
   const handleSubmit = async () => {
@@ -155,8 +163,8 @@ const CodeEditor: React.FC = () => {
               <div>
                 <h2 className="text-xl font-bold text-gray-400">Invitation Code:</h2>
                 <div className="bg-gray-800 text-green-400 p-4 rounded-lg mt-2  overflow-y-auto shadow-lg ">
-                  {invitationCode.length > 0 ? (
-                    <pre className="whitespace-pre-wrap">{invitationCode}</pre>
+                  {user.roomId.length > 0 ? (
+                    <pre className="whitespace-pre-wrap">{user.roomId}</pre>
                   ) : (
                     <p className="text-gray-500">No invitation code yet.</p>
                   )}

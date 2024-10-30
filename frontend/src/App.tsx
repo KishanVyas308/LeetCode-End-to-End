@@ -7,12 +7,16 @@ const App = () => {
   return (
     <Router>
       <Routes>
-        <Route path="/register" element={<Register />} />
-       
+
+        {/* Route for CodeEditor with ProtectedRouter */}
         <Route
-          path="/"
-          element={<ProtectedRouter children={<CodeEditor />} />}
-        />
+          path="/:roomId"
+          element={<Register />} />
+        {/* Define a route for the home path */}
+        <Route path="/" element={<Register />} />
+
+        {/* Correct route syntax for Register with roomId */}
+        <Route path="/code/:roomId" element={ <ProtectedRouter  > <CodeEditor /> </ProtectedRouter>} />
       </Routes>
     </Router>
   );
