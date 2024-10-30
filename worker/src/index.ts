@@ -7,10 +7,10 @@ const client = createClient();
 const pubClient = createClient();
 
 async function processSubmission(submission: any) {
-  const { code, language, userId, submissionId, input } =
+  const { code, language, roomId, submissionId, input } =
     JSON.parse(submission);
   console.log(
-    `Processing submission for user id: ${userId}, submission id: ${submissionId}`
+    `Processing submission for room id: ${roomId}, submission id: ${submissionId}`
   );
 
   // Create unique directory for code execution
@@ -89,10 +89,10 @@ sh -c "g++ /usr/src/app/userCode.cpp -o /usr/src/app/a.out && /usr/src/app/a.out
     if (error) {
       result = `Error: ${error.message}`;
     }
-    console.log(`Result for user ${userId}: ${result}`);
+    console.log(`Result for room ${roomId}: ${result}`);
 
     try {
-      await pubClient.publish(userId, result);
+      await pubClient.publish(roomId, result);
     } catch (err) {
       console.error("Failed to publish result to Redis:", err);
     }
