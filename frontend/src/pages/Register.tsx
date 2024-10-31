@@ -34,9 +34,23 @@ const Register = () => {
         }
 
         if (!socket || socket.readyState === WebSocket.CLOSED) {
-
-            const ws = new WebSocket(`ws://localhost:5000?roomId=${roomId}`, user.id == "" ? GeneratedId : user.id);
+            const u = {
+                id: user.id == "" ? GeneratedId : user.id,
+                name: name
+            }
+            if(name == "") {
+                alert("Please enter a name to continue");
+                setLoading(false);
+                return;
+            }
+            const ws = new WebSocket(`ws://localhost:5000?roomId=${roomId}&id=${u.id}&name=${u.name}`);
+          
             setSocket(ws);
+
+
+            ws.onopen = () => {
+                console.log("Connected to WebSocket");
+            };
 
             ws.onopen = () => {
                 console.log("Connected to WebSocket");
@@ -52,6 +66,7 @@ const Register = () => {
                         name: name,
                         roomId: data.roomId
                     });
+                   
                     setLoading(false);
                     alert(data.message);
                     navigate("/code/" + data.roomId);

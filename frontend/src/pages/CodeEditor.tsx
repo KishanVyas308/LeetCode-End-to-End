@@ -5,6 +5,7 @@ import { useRecoilState } from "recoil";
 import { AiOutlineLoading3Quarters } from "react-icons/ai"; // Import spinner icon
 import { socketAtom } from "../atoms/socketAtom";
 import { useNavigate, useParams } from "react-router-dom";
+import { connectedUsersAtom } from "../atoms/connectedUsersAtom";
 
 const CodeEditor: React.FC = () => {
   const [code, setCode] = useState<any>("// Write your code here...");
@@ -16,10 +17,11 @@ const CodeEditor: React.FC = () => {
   const [input, setInput] = useState<string>(""); // Input for code
   const [user, setUser] = useRecoilState(userAtom);
   const navigate = useNavigate();
+  
 
 
   // multipleyer state
-  const [users, setUsers] = useState([]);
+  const [connectedUsers, setConnectedUsers] = useRecoilState<any[]>(connectedUsersAtom);
   const parms = useParams();
 
   // WebSocket connection logic
@@ -29,16 +31,50 @@ const CodeEditor: React.FC = () => {
       navigate("/" + parms.roomId);
     }
     else {
-    
+
+      socket.send(
+        JSON.stringify({
+          type: "requestToGetUsers",
+          roomId: user.roomId
+        })
+      );
+
       socket.onmessage = (event) => {
         const data = JSON.parse(event.data);
+        // on chanege of user
         if (data.type === "users") {
-          setUsers(data.users);
+          console.log(data.users);
+          setConnectedUsers(data.users);
+        }
+        // on change of code
+        if (data.type === "code") {
+          setCode(data.code);
         }
 
-        if (data.type === "output") {
-          setOutput((prevOutput) => [...prevOutput, data.output]);
+        // on change of input
+        if (data.type === "input") {
+          setInput(data.input);
         }
+
+        // on change of language
+        if (data.type === "language") {
+          setLanguage(data.language);
+        }
+
+        // on change of Submit Button Status
+        if (data.type === "submitBtnStatus") {
+          setCurrentButtonState(data.value);
+          setIsLoading(data.isLoading);
+        }
+
+
+        // on change of output
+        if (data.type === "output") {
+          setOutput((prevOutput) => [...prevOutput, data.message]);
+          handleButtonStatus("Submit Code", false);
+        }
+
+        
       };
       socket.onclose = () => {
         console.log("Connection closed");
@@ -56,12 +92,12 @@ const CodeEditor: React.FC = () => {
   }, []);
 
   const handleSubmit = async () => {
-    setIsLoading(true);
-    setCurrentButtonState("Submitting...");
+
+    handleButtonStatus("Submitting...", true);
     const submission = {
       code,
       language,
-      userId: user?.id,
+      roomId: user.roomId,
       input
     };
 
@@ -76,17 +112,70 @@ const CodeEditor: React.FC = () => {
       body: JSON.stringify(submission),
     });
 
-    setCurrentButtonState("Compiling...");
+
+    handleButtonStatus("Compiling...", true);
 
     if (!res.ok) {
       setOutput((prevOutput) => [
         ...prevOutput,
         "Error submitting code. Please try again.",
       ]);
-      setIsLoading(false);
-      setCurrentButtonState("Submit Code");
+      handleButtonStatus("Submit Code", false);
     }
   };
+
+
+  // handle code change multiple user
+  const handleCodeChange = (value: any) => {
+    setCode(value);
+    socket?.send(
+      JSON.stringify({
+        type: "code",
+        code: value,
+        roomId: user.roomId
+      })
+    );
+  }
+
+  // handle input change multiple user
+  const handleInputChange = (e: any) => {
+    setInput(e.target.value);
+    socket?.send(
+      JSON.stringify({
+        type: "input",
+        input: e.target.value
+        ,
+        roomId: user.roomId
+      })
+    );
+  }
+
+  // handle language change multiple user
+  const handleLanguageChange = (value: any) => {
+    setLanguage(value);
+    socket?.send(
+      JSON.stringify({
+        type: "language",
+        language: value,
+        roomId: user.roomId
+      })
+    );
+  }
+
+  // handle submit button status multiple user
+  const handleButtonStatus = (value: any, isLoading: any) => {
+    setCurrentButtonState(value);
+    setIsLoading(isLoading);
+    socket?.send(
+      JSON.stringify({
+        type: "submitBtnStatus",
+        value: value,
+        isLoading: isLoading,
+        roomId: user.roomId
+      })
+    );
+  }
+
 
   return (
     <div className="min-h-screen  bg-gray-900 text-white px-4 pt-4">
@@ -116,7 +205,7 @@ const CodeEditor: React.FC = () => {
                 {/* Language Selector */}
                 <select
                   value={language}
-                  onChange={(e) => setLanguage(e.target.value)}
+                  onChange={(e) => handleLanguageChange(e.target.value)}
                   className="bg-gray-800 h-10 text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-lg transition duration-300"
                 >
                   <option value="javascript">JavaScript</option>
@@ -135,7 +224,7 @@ const CodeEditor: React.FC = () => {
                 value={code}
                 language={language}
                 theme="vs-dark"
-                onChange={setCode}
+                onChange={(value) => handleCodeChange(value)}
                 height={"90vh"}
               />
             </div>
@@ -147,12 +236,12 @@ const CodeEditor: React.FC = () => {
             {/* user connected and invition code */}
             <div className="flex justify-between ">
               {/* User Connected */}
-              <div>
+              <div className="w-1/2">
                 <h2 className="text-xl font-bold text-gray-400">Users:</h2>
-                <div className="bg-gray-800 text-green-400 p-4  rounded-lg mt-2 overflow-y-auto shadow-lg ">
-                  {users.length > 0 ? (
-                    users.map((user, index) => (
-                      <pre key={index} className="whitespace-pre-wrap">{user}</pre>
+                <div className="bg-gray-800 text-green-400 p-4  rounded-lg mt-2 overflow-y-auto  shadow-lg ">
+                  {connectedUsers.length > 0 ? (
+                    connectedUsers.map((user: any, index: any) => (
+                      <pre key={index} className="whitespace-pre-wrap">{user.name}</pre>
                     ))
                   ) : (
                     <p className="text-gray-500">No user connected yet.</p>
@@ -177,7 +266,7 @@ const CodeEditor: React.FC = () => {
               <textarea
                 value={input}
                 style={{ height: "120px" }}
-                onChange={(e) => setInput(e.target.value)}
+                onChange={(e) => handleInputChange(e)}
                 placeholder={`Enter input for your code like... \n5 \n10`}
                 className="bg-gray-800 text-white w-full p-4 rounded-lg shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 mt-2"
               />
