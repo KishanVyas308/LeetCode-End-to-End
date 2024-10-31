@@ -25,11 +25,15 @@ async function process() {
 
   wss.on("connection", (ws, req) => {
     console.log("Connection established");
-    const userId: any = req.headers["sec-websocket-protocol"];
-    console.log(`New user connected: ${userId}`);
-    let roomId = req.url?.split("?roomId=")[1]; // Get roomId from query param if provided
 
-   
+    const queryParams = new URLSearchParams(req.url?.split("?")[1]);
+    let roomId = queryParams.get("roomId"); // Get roomId from query param if provided
+    const userId = queryParams.get("id"); // Get userId from query param
+    const name = queryParams.get("name"); // Get name from query param
+    console.log("User id", userId);
+    console.log("Room id", roomId);
+    console.log("Name", name);
+
     // If no roomId, generate a new roomId and add the user as the first member
     if (roomId == null || roomId == "" || !rooms[roomId]) {
       roomId = generateRoomId();
@@ -54,16 +58,94 @@ async function process() {
         })
       );
     }
+    const users = rooms[roomId].map((user: any) => ({
+      id: user.userId,
+      name: user.name,
+    }));
+    rooms[roomId].forEach((user: any) => {
+      user.ws.send(JSON.stringify({ type: "users", users }));
+    });
 
-    rooms[roomId].push({ userId, ws });
+    rooms[roomId].push({ userId, ws, name });
     console.log("all room", rooms);
-    
+
     pubSubClient.subscribe(roomId, (message) => {
       // Broadcast message to all users in the room
       rooms[roomId].forEach((user: any) => {
-        user.ws.send({ type: "output", message });
-        console.log("Output sent to user id", user.userId);
+        if (user.userId === userId) {
+          user.ws.send(JSON.stringify({ type: "output", message }));
+          console.log("Output sent to user id", user.id);
+        }
       });
+    });
+
+    ws.on("message", (message) => {
+      const data = JSON.parse(message.toString());
+
+      // handle request from user and send it all back to all users in the room
+      if (data.type === "requestToGetUsers") {
+        const users = rooms[roomId].map((user: any) => ({
+          id: user.userId,
+          name: user.name,
+        }));
+        rooms[roomId].forEach((user: any) => {
+          user.ws.send(JSON.stringify({ type: "users", users: users }));
+        });
+      }
+
+      // handle code change and send it to all users in the room
+      if (data.type === "code") {
+        rooms[roomId].forEach((user: any) => {
+          if (user.userId != userId) {
+            user.ws.send(JSON.stringify({ type: "code", code: data.code }));
+          }
+        });
+      }
+      // handle input change and send it to all users in the room
+      if (data.type === "input") {
+        rooms[roomId].forEach((user: any) => {
+          if (user.userId != userId) {
+            user.ws.send(JSON.stringify({ type: "input", input: data.input }));
+          }
+        });
+      }
+
+      // handle language change and send it to all users in the room
+      if (data.type === "language") {
+        rooms[roomId].forEach((user: any) => {
+          if (user.userId != userId) {
+            user.ws.send(
+              JSON.stringify({ type: "language", language: data.language })
+            );
+          }
+        });
+      }
+
+      // handle submit button status
+      if (data.type === "submitBtnStatus") {
+        rooms[roomId].forEach((user: any) => {
+          if (user.userId != userId) {
+            user.ws.send(
+              JSON.stringify({
+                type: "submitBtnStatus",
+                value: data.value,
+                isLoading: data.isLoading,
+              })
+            );
+          }
+        });
+
+        // handle user added
+        if (data.type === "users") {
+          rooms[roomId].forEach((user: any) => {
+            if (user.userId != userId) {
+              user.ws.send(
+                JSON.stringify({ type: "users", users: data.users })
+              );
+            }
+          });
+        }
+      }
     });
 
     ws.on("close", () => {
@@ -80,7 +162,6 @@ async function process() {
       }
 
       console.log("all room", rooms);
-      
     });
   });
 
