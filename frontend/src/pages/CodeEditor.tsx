@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { CodeiumEditor } from "@codeium/react-code-editor";
+import React, { useState, useEffect, useRef } from "react";
+import MonacoEditor from '@monaco-editor/react';
 import { userAtom } from "../atoms/userAtom";
 import { useRecoilState } from "recoil";
 import { AiOutlineLoading3Quarters } from "react-icons/ai"; // Import spinner icon
@@ -17,7 +17,7 @@ const CodeEditor: React.FC = () => {
   const [input, setInput] = useState<string>(""); // Input for code
   const [user, setUser] = useRecoilState(userAtom);
   const navigate = useNavigate();
-  
+
 
 
   // multipleyer state
@@ -31,19 +31,46 @@ const CodeEditor: React.FC = () => {
       navigate("/" + parms.roomId);
     }
     else {
-
+      // request to get all users on start
       socket.send(
         JSON.stringify({
           type: "requestToGetUsers",
-          roomId: user.roomId
+          userId: user.id
         })
       );
 
+
+      // request to get all data on start
+      socket.send(
+        JSON.stringify({
+          type: "requestForAllData",
+        })
+      );
+      socket.onclose = () => {
+        console.log("Connection closed");
+        setUser({
+          id: "",
+          name: "",
+          roomId: "",
+        })
+        setSocket(null);
+      }
+    }
+    return () => {
+      socket?.close();
+    };
+  }, []);
+
+
+  useEffect(() => {
+    if (!socket) {
+      navigate("/" + parms.roomId);
+    }
+    else {
       socket.onmessage = (event) => {
         const data = JSON.parse(event.data);
-        // on chanege of user
+        // on change of user
         if (data.type === "users") {
-          console.log(data.users);
           setConnectedUsers(data.users);
         }
         // on change of code
@@ -67,32 +94,65 @@ const CodeEditor: React.FC = () => {
           setIsLoading(data.isLoading);
         }
 
-
         // on change of output
         if (data.type === "output") {
           setOutput((prevOutput) => [...prevOutput, data.message]);
           handleButtonStatus("Submit Code", false);
         }
 
-        
+        // on receive cursor position
+        if (data.type === "cursorPosition") {
+          // Update cursor position for the user
+          const updatedUsers = connectedUsers.map((user) => {
+            if (user.id === data.userId) {
+              return { ...user, cursorPosition: data.cursorPosition };
+            }
+            return user;
+          });
+          setConnectedUsers(updatedUsers);
+        }
+
+        // send all data to new user on join  
+        if (data.type === "requestForAllData") {
+          socket?.send(
+            JSON.stringify({
+              type: "allData",
+              code: code,
+              input: input,
+              language: language,
+              currentButtonState: currentButtonState,
+              isLoading: isLoading,
+              userId: data.userId
+            })
+          );
+        }
+
+        // on receive all data
+        if (data.type === "allData") {
+          setCode(data.code);
+          setInput(data.input);
+          setLanguage(data.language);
+          setCurrentButtonState(data.currentButtonState);
+          setIsLoading(data.isLoading);
+        }
+
+        // on recive cursor poisition
+        if (data.type === "cursorPosition") {
+          const updatedUsers = connectedUsers.map((user) => {
+            if (user.id === data.userId) {
+              return { ...user, cursorPosition: data.cursorPosition };
+            }
+            return user;
+          });
+          console.log("updatedUsers", updatedUsers);
+          
+          setConnectedUsers(updatedUsers);
+        }
       };
-      socket.onclose = () => {
-        console.log("Connection closed");
-        setUser({
-          id: "",
-          name: "",
-          roomId: "",
-        })
-        setSocket(null);
-      }
     }
-    return () => {
-      socket?.close();
-    };
-  }, []);
+  }, [code, input, language, currentButtonState, isLoading, connectedUsers]);
 
   const handleSubmit = async () => {
-
     handleButtonStatus("Submitting...", true);
     const submission = {
       code,
@@ -103,15 +163,13 @@ const CodeEditor: React.FC = () => {
 
     socket?.send(user?.id ? user.id : "");
 
-    console.log(submission);
-    const res = await fetch("http://localhost:3000/submit", {
+    const res = await fetch("http://192.168.179.47/:3000/submit", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify(submission),
     });
-
 
     handleButtonStatus("Compiling...", true);
 
@@ -124,27 +182,13 @@ const CodeEditor: React.FC = () => {
     }
   };
 
-
-  // handle code change multiple user
-  const handleCodeChange = (value: any) => {
-    setCode(value);
-    socket?.send(
-      JSON.stringify({
-        type: "code",
-        code: value,
-        roomId: user.roomId
-      })
-    );
-  }
-
   // handle input change multiple user
   const handleInputChange = (e: any) => {
     setInput(e.target.value);
     socket?.send(
       JSON.stringify({
         type: "input",
-        input: e.target.value
-        ,
+        input: e.target.value,
         roomId: user.roomId
       })
     );
@@ -176,21 +220,55 @@ const CodeEditor: React.FC = () => {
     );
   }
 
+  const handleEditorDidMount = (editor: any, monaco: any) => {
+    console.log("editor", editor);
+    console.log("monaco", monaco);
+
+    if (editor) {
+      editor.onDidChangeCursorPosition((event: any) => {
+        const position = editor.getPosition();
+        console.log("Cursor Position:", position);
+        socket?.send(
+          JSON.stringify({
+            type: "cursorPosition",
+            cursorPosition: position,
+            userId: user.id
+          })
+        );
+      });
+
+      // handle code change multiple user
+      editor.onDidChangeModelContent((event: any) => {
+        console.log("Code Updated:", editor.getValue());
+        setCode(editor.getValue());
+        socket?.send(
+          JSON.stringify({
+            type: "code",
+            code: editor.getValue(),
+            roomId: user.roomId
+          })
+        );
+      });
+
+      editor.onDidChangeCursorSelection((event: any) => {
+        const selection = editor.getSelection();
+        const selectedText = editor.getModel().getValueInRange(selection);
+        console.log("Selected Code:", selectedText);
+      });
+    }
+  };
 
   return (
-    <div className="min-h-screen  bg-gray-900 text-white px-4 pt-4">
-      <div className=" mx-auto">
-
-
+    <div className="min-h-screen bg-gray-900 text-white px-4 pt-4">
+      <div className="mx-auto">
         <div className="flex space-x-4">
           {/* Left Side: Code Editor */}
           <div className="w-3/4">
             <div className="flex justify-between mb-4 px-3">
               <label className="text-white text-3xl">Code Together</label>
               <div className="flex gap-3">
-
                 {/* Submit Button */}
-                <div className="flex justify-center ">
+                <div className="flex justify-center">
                   <button
                     onClick={handleSubmit}
                     className={`bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-4 py-2 rounded-lg shadow-lg transition-transform duration-300 transform ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
@@ -219,13 +297,13 @@ const CodeEditor: React.FC = () => {
             </div>
 
             {/* Code Editor */}
-            <div className="border border-gray-700 rounded-tl-lg rounded-bl-lg overflow-hidden shadow-lg ">
-              <CodeiumEditor
+            <div className="border border-gray-700 rounded-tl-lg rounded-bl-lg overflow-hidden shadow-lg">
+              <MonacoEditor
                 value={code}
                 language={language}
                 theme="vs-dark"
-                onChange={(value) => handleCodeChange(value)}
-                height={"90vh"}
+                height="90vh"
+                onMount={handleEditorDidMount}
               />
             </div>
           </div>

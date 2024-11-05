@@ -82,15 +82,37 @@ async function process() {
     ws.on("message", (message) => {
       const data = JSON.parse(message.toString());
 
+      console.log("Message received", data.type);
+
       // handle request from user and send it all back to all users in the room
       if (data.type === "requestToGetUsers") {
         const users = rooms[roomId].map((user: any) => ({
           id: user.userId,
           name: user.name,
         }));
+        console.log("request recived");
+
         rooms[roomId].forEach((user: any) => {
           user.ws.send(JSON.stringify({ type: "users", users: users }));
         });
+      }
+
+      // request for starter data on new user join
+      if (data.type == "requestForAllData") {
+        
+
+        const otherUser = rooms[roomId].find(
+          (user: any) => user.userId !== userId
+        );
+        if (otherUser) {
+          console.log("sending request to", otherUser.name);
+          otherUser.ws.send(
+            JSON.stringify({
+              type: "requestForAllData",
+              userId: userId,
+            })
+          );
+        }
       }
 
       // handle code change and send it to all users in the room
@@ -134,31 +156,68 @@ async function process() {
             );
           }
         });
+      }
 
-        // handle user added
-        if (data.type === "users") {
-          rooms[roomId].forEach((user: any) => {
-            if (user.userId != userId) {
-              user.ws.send(
-                JSON.stringify({ type: "users", users: data.users })
-              );
-            }
-          });
-        }
+      // handle user added
+      if (data.type === "users") {
+        rooms[roomId].forEach((user: any) => {
+          if (user.userId != userId) {
+            user.ws.send(JSON.stringify({ type: "users", users: data.users }));
+          }
+        });
+      }
+
+      // send all data to new user
+      if (data.type === "allData") {
+       
+        
+        rooms[roomId].forEach((user: any) => {
+          if (user.userId === data.userId) {
+            console.log("sending all data to", user.name , "and data is", data);
+            
+            user.ws.send(
+              JSON.stringify({
+                type: "allData",
+                code: data.code,
+                input: data.input,
+                language: data.language,
+                currentButtonState: data.currentButtonState,
+                isLoading: data.isLoading,
+              })
+            );
+          }
+        });
+      }
+
+      // send current cursor position to all users in the room
+      if (data.type === "cursorPosition") {
+        rooms[roomId].forEach((user: any) => {
+          if (user.userId != userId) {
+            user.ws.send(
+              JSON.stringify({
+                type: "cursorPosition",
+                cursorPosition: data.cursorPosition,
+                userId: userId,
+              })
+            );
+          }
+        });
       }
     });
 
     ws.on("close", () => {
-      // console.log("connection closed user id", userId);
-      // delete connectedUsers[userId];
-      // pubSubClient.unsubscribe(userId);
-      // close conenction and if room is empty delete the room
       // remove user from room
       rooms[roomId] = rooms[roomId].filter(
         (user: any) => user.userId !== userId
       );
+
+      // send updated users list to all users in the room
+      rooms[roomId].forEach((user: any) => {
+        user.ws.send(JSON.stringify({ type: "users", users }));
+      });
       if (rooms[roomId].length === 0) {
         delete rooms[roomId];
+        pubSubClient.unsubscribe(roomId);
       }
 
       console.log("all room", rooms);
@@ -170,7 +229,7 @@ async function process() {
     console.log(`Server listening on port ${addr.port}`);
   });
 
-  server.listen(5000, () => {
+  server.listen(5000, '0.0.0.0', () => {
     console.log("web socket server started on 5000");
   });
 }

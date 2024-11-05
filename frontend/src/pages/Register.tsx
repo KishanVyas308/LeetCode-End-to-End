@@ -43,7 +43,7 @@ const Register = () => {
                 setLoading(false);
                 return;
             }
-            const ws = new WebSocket(`ws://localhost:5000?roomId=${roomId}&id=${u.id}&name=${u.name}`);
+            const ws = new WebSocket(`ws://192.168.179.47:5000?roomId=${roomId}&id=${u.id}&name=${u.name}`);
           
             setSocket(ws);
 
