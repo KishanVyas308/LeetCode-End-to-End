@@ -6,6 +6,7 @@ import { AiOutlineLoading3Quarters } from "react-icons/ai"; // Import spinner ic
 import { socketAtom } from "../atoms/socketAtom";
 import { useNavigate, useParams } from "react-router-dom";
 import { connectedUsersAtom } from "../atoms/connectedUsersAtom";
+import { IP_ADDRESS } from "../Globle";
 
 const CodeEditor: React.FC = () => {
   const [code, setCode] = useState<any>("// Write your code here...");
@@ -136,21 +137,21 @@ const CodeEditor: React.FC = () => {
           setIsLoading(data.isLoading);
         }
 
-        // on recive cursor poisition
-        if (data.type === "cursorPosition") {
-          const updatedUsers = connectedUsers.map((user) => {
-            if (user.id === data.userId) {
-              return { ...user, cursorPosition: data.cursorPosition };
-            }
-            return user;
-          });
-          console.log("updatedUsers", updatedUsers);
+        // // on recive cursor poisition
+        // if (data.type === "cursorPosition") {
+        //   const updatedUsers = connectedUsers.map((user) => {
+        //     if (user.id === data.userId) {
+        //       return { ...user, cursorPosition: data.cursorPosition };
+        //     }
+        //     return user;
+        //   });
+        //   console.log("updatedUsers", updatedUsers);
           
-          setConnectedUsers(updatedUsers);
-        }
+        //   setConnectedUsers(updatedUsers);
+        // }
       };
     }
-  }, [code, input, language, currentButtonState, isLoading, connectedUsers]);
+  }, [code, input, language, currentButtonState, isLoading]);
 
   const handleSubmit = async () => {
     handleButtonStatus("Submitting...", true);
@@ -163,7 +164,7 @@ const CodeEditor: React.FC = () => {
 
     socket?.send(user?.id ? user.id : "");
 
-    const res = await fetch("http://192.168.179.47/:3000/submit", {
+    const res = await fetch(`http://${IP_ADDRESS}:3000/submit`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -225,17 +226,17 @@ const CodeEditor: React.FC = () => {
     console.log("monaco", monaco);
 
     if (editor) {
-      editor.onDidChangeCursorPosition((event: any) => {
-        const position = editor.getPosition();
-        console.log("Cursor Position:", position);
-        socket?.send(
-          JSON.stringify({
-            type: "cursorPosition",
-            cursorPosition: position,
-            userId: user.id
-          })
-        );
-      });
+      // editor.onDidChangeCursorPosition((event: any) => {
+      //   const position = editor.getPosition();
+      //   console.log("Cursor Position:", position);
+      //   socket?.send(
+      //     JSON.stringify({
+      //       type: "cursorPosition",
+      //       cursorPosition: position,
+      //       userId: user.id
+      //     })
+      //   );
+      // });
 
       // handle code change multiple user
       editor.onDidChangeModelContent((event: any) => {
@@ -250,28 +251,28 @@ const CodeEditor: React.FC = () => {
         );
       });
 
-      editor.onDidChangeCursorSelection((event: any) => {
-        const selection = editor.getSelection();
-        const selectedText = editor.getModel().getValueInRange(selection);
-        console.log("Selected Code:", selectedText);
-      });
+      // editor.onDidChangeCursorSelection((event: any) => {
+      //   const selection = editor.getSelection();
+      //   const selectedText = editor.getModel().getValueInRange(selection);
+      //   console.log("Selected Code:", selectedText);
+      // });
     }
   };
 
   return (
     <div className="min-h-screen bg-gray-900 text-white px-4 pt-4">
-      <div className="mx-auto">
-        <div className="flex space-x-4">
+      <div className="container mx-auto">
+        <div className="flex flex-col lg:flex-row space-y-4 lg:space-y-0 lg:space-x-4">
           {/* Left Side: Code Editor */}
-          <div className="w-3/4">
-            <div className="flex justify-between mb-4 px-3">
-              <label className="text-white text-3xl">Code Together</label>
+          <div className="w-full lg:w-3/4">
+            <div className="flex justify-between mb-4 lg:px-3">
+              <label className="text-white text-2xl lg:text-3xl">Code Together</label>
               <div className="flex gap-3">
                 {/* Submit Button */}
                 <div className="flex justify-center">
                   <button
                     onClick={handleSubmit}
-                    className={`bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-4 py-2 rounded-lg shadow-lg transition-transform duration-300 transform ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    className={`bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-3 lg:px-4 py-2 rounded-lg shadow-lg transition-transform duration-300 transform ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
                     disabled={isLoading}
                   >
                     <span className="flex items-center space-x-2">
@@ -284,7 +285,7 @@ const CodeEditor: React.FC = () => {
                 <select
                   value={language}
                   onChange={(e) => handleLanguageChange(e.target.value)}
-                  className="bg-gray-800 h-10 text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-lg transition duration-300"
+                  className="bg-gray-800 h-10 text-white px-3 lg:px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-lg transition duration-300"
                 >
                   <option value="javascript">JavaScript</option>
                   <option value="python">Python</option>
@@ -297,29 +298,33 @@ const CodeEditor: React.FC = () => {
             </div>
 
             {/* Code Editor */}
-            <div className="border border-gray-700 rounded-tl-lg rounded-bl-lg overflow-hidden shadow-lg">
+            <div className="border border-gray-700 rounded-lg overflow-hidden shadow-lg">
               <MonacoEditor
                 value={code}
                 language={language}
                 theme="vs-dark"
-                height="90vh"
+                className="lg:h-[90vh] h-[60vh]"
                 onMount={handleEditorDidMount}
               />
             </div>
           </div>
 
           {/* Right Side: Input and Output */}
-          <div className="w-1/4 flex flex-col space-y-4">
-
-            {/* user connected and invition code */}
-            <div className="flex justify-between ">
+          <div className="w-full lg:w-1/4 flex flex-col space-y-4">
+            {/* User Connected and Invitation Code */}
+            <div className="flex flex-col lg:flex-row justify-between space-y-4 lg:space-y-0 lg:space-x-4">
               {/* User Connected */}
-              <div className="w-1/2">
-                <h2 className="text-xl font-bold text-gray-400">Users:</h2>
-                <div className="bg-gray-800 text-green-400 p-4  rounded-lg mt-2 overflow-y-auto  shadow-lg ">
+              <div className="w-full lg:w-1/2">
+                <h2 className="text-lg lg:text-xl font-bold text-gray-400">Users:</h2>
+                <div className="bg-gray-800 text-green-400 p-4 rounded-lg mt-2 overflow-y-auto shadow-lg max-h-40 lg:max-h-60">
                   {connectedUsers.length > 0 ? (
                     connectedUsers.map((user: any, index: any) => (
-                      <pre key={index} className="whitespace-pre-wrap">{user.name}</pre>
+                      <div key={index} className="flex items-center space-x-2">
+                        <div className="bg-blue-500 text-white rounded-full w-8 h-8 flex items-center justify-center">
+                          {user.name.charAt(0).toUpperCase()}
+                        </div>
+                        <pre className="whitespace-pre-wrap text-sm lg:text-base">{user.name}</pre>
+                      </div>
                     ))
                   ) : (
                     <p className="text-gray-500">No user connected yet.</p>
@@ -327,11 +332,11 @@ const CodeEditor: React.FC = () => {
                 </div>
               </div>
               {/* Invitation Code */}
-              <div>
-                <h2 className="text-xl font-bold text-gray-400">Invitation Code:</h2>
-                <div className="bg-gray-800 text-green-400 p-4 rounded-lg mt-2  overflow-y-auto shadow-lg ">
+              <div className="w-full lg:w-1/2">
+                <h2 className="text-lg lg:text-xl font-bold text-gray-400">Invitation Code:</h2>
+                <div className="bg-gray-800 text-green-400 p-4 rounded-lg mt-2 overflow-y-auto shadow-lg max-h-40 lg:max-h-60">
                   {user.roomId.length > 0 ? (
-                    <pre className="whitespace-pre-wrap">{user.roomId}</pre>
+                    <pre className="whitespace-pre-wrap text-sm lg:text-base">{user.roomId}</pre>
                   ) : (
                     <p className="text-gray-500">No invitation code yet.</p>
                   )}
@@ -340,24 +345,20 @@ const CodeEditor: React.FC = () => {
             </div>
             {/* Input Section */}
             <div>
-              <h2 className="text-xl font-bold text-gray-400">Input:</h2>
+              <h2 className="text-lg lg:text-xl font-bold text-gray-400">Input:</h2>
               <textarea
                 value={input}
                 style={{ height: "120px" }}
                 onChange={(e) => handleInputChange(e)}
                 placeholder={`Enter input for your code like... \n5 \n10`}
-                className="bg-gray-800 text-white w-full p-4 rounded-lg shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 mt-2"
+                className="bg-gray-800 text-white w-full p-4 rounded-lg shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 mt-2 text-sm lg:text-base"
               />
             </div>
 
-
-
             {/* Output Section */}
-            <div className="flex-1">
-
-
+            <div className="flex-1 pb-8">
               <div className="flex justify-between px-2">
-                <h2 className="text-xl font-bold text-gray-400">Output:</h2>
+                <h2 className="text-lg lg:text-xl font-bold text-gray-400">Output:</h2>
                 <button
                   onClick={() => setOutput([])}
                   className="text-red-500 hover:text-red-600"
@@ -366,7 +367,7 @@ const CodeEditor: React.FC = () => {
                 </button>
               </div>
 
-              <div className="bg-gray-800 text-green-400 p-4 max-h-[60vh] rounded-lg mt-2 h-full overflow-y-auto shadow-lg space-y-2 ">
+              <div className="bg-gray-800 text-green-400 p-4 max-h-[60vh] rounded-lg mt-2 h-full overflow-y-auto shadow-lg space-y-2 text-sm lg:text-base">
                 {output.length > 0 ? (
                   output.map((line, index) => (
                     <pre key={index} className="whitespace-pre-wrap">{line}</pre>
