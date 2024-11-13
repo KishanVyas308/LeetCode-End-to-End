@@ -13,6 +13,7 @@ cd ./app
 ```
 write to all 4 services. 
 ```bash
+cd ./frontend (eg. of 1 service)
 npm i 
 ```
 now open docker desktop.
