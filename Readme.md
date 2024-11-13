@@ -6,29 +6,27 @@
 
 Yah this, what you see is done. 
 
-## express-server
 
-set up and run
+## set up and run
 ```bash
-cd ./express-server
-npm install
-tsc -b
-node ./dist/index.js
+cd ./app
+```
+write to all 4 services. 
+```bash
+npm i 
+```
+now open docker desktop.
+after write in terminal
+
+```bash
+cd ../..
+docker-compose up -d
 ```
 
-## worker
-
-set up and run
-```bash
-tsc -b
-node ./dist/index.js
-```
-
-## frontend
-
-```bash
-cd ./frontend
-npm install
+then run 
+```bash 
 npm run dev
 ```
+
+which start 4 different services.
 
