@@ -6,7 +6,7 @@
 
 ## Video Demo 
 [Watch on Youtube](https://youtu.be/afwZ4l_ZRMQ?si=WwQgzC0g1YT7C6Xk) 
-[CHeck LinkedIn Post](https://www.linkedin.com/feed/update/urn:li:activity:7263061074076205056)
+[Check LinkedIn Post](https://www.linkedin.com/feed/update/urn:li:activity:7263061074076205056)
 
 ## set up and run
 ```bash
