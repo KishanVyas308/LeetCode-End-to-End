@@ -5,7 +5,8 @@
 <img src="https://github-production-user-asset-6210df.s3.amazonaws.com/114094586/381923136-c8283795-c7ed-4704-aa49-1e75c678ee62.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAVCODYLSA53PQK4ZA%2F20241031%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20241031T110056Z&X-Amz-Expires=300&X-Amz-Signature=1ac67ad7afef93faddc26def785aac9ff2ed895512f8f88c0cbc99eb4ed5f474&X-Amz-SignedHeaders=host" width="500">
 
 ## Video Demo 
-[Wathch on Youtube](https://youtu.be/afwZ4l_ZRMQ?si=WwQgzC0g1YT7C6Xk) 
+[Watch on Youtube](https://youtu.be/afwZ4l_ZRMQ?si=WwQgzC0g1YT7C6Xk) 
+[CHeck LinkedIn Post](https://www.linkedin.com/feed/update/urn:li:activity:7263061074076205056)
 
 ## set up and run
 ```bash
