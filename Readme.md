@@ -4,8 +4,8 @@
 ## Code Compilation System Design.
 <img src="https://github-production-user-asset-6210df.s3.amazonaws.com/114094586/381923136-c8283795-c7ed-4704-aa49-1e75c678ee62.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAVCODYLSA53PQK4ZA%2F20241031%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20241031T110056Z&X-Amz-Expires=300&X-Amz-Signature=1ac67ad7afef93faddc26def785aac9ff2ed895512f8f88c0cbc99eb4ed5f474&X-Amz-SignedHeaders=host" width="500">
 
-Yah this, what you see is done. 
-
+## Video Demo 
+[Wathch on Youtube](https://youtu.be/afwZ4l_ZRMQ?si=WwQgzC0g1YT7C6Xk) 
 
 ## set up and run
 ```bash
@@ -30,4 +30,12 @@ npm run dev
 ```
 
 which start 4 different services.
+
+## Demo 
+![image](https://github.com/user-attachments/assets/30966c66-9984-4721-98cd-0b45709a1481)
+![image](https://github.com/user-attachments/assets/78a842e2-0c12-4423-bbf9-fbacb41997fd)
+![image](https://github.com/user-attachments/assets/ae41bc9f-fb0b-4044-9ea2-c809df57987b)
+
+
+
 
